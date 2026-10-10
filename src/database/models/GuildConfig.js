@@ -1,0 +1,176 @@
+const mongoose = require('mongoose');
+
+const moduleDefaults = {
+  moderation: true,
+  automod: false,
+  tickets: false,
+  economy: false,
+  leveling: false,
+  music: false,
+  ai: false,
+  customCommands: false,
+  welcomeLeave: false,
+  verification: false,
+  giveaways: false,
+  temporaryVoice: false,
+  analytics: false,
+  starboard: false,
+  suggestions: false,
+};
+
+const guildConfigSchema = new mongoose.Schema({
+  guildId: { type: String, required: true, unique: true, index: true },
+  prefix: { type: String, default: '!', trim: true, minlength: 1, maxlength: 5 },
+  language: { type: String, default: 'en', maxlength: 10 },
+  modules: { type: Map, of: Boolean, default: () => moduleDefaults },
+  moderation: {
+    logChannelId: { type: String, default: null },
+    antiLink: { type: Boolean, default: false },
+    badWords: { type: [String], default: [] },
+    messageAction: { type: String, enum: ['warn', 'timeout', 'ban'], default: 'warn' },
+    timeoutMinutes: { type: Number, default: 10, min: 1, max: 40320 },
+    spamThreshold: { type: Number, default: 6, min: 2, max: 30 },
+    spamWindowMs: { type: Number, default: 5000, min: 1000, max: 60000 },
+    floodThreshold: { type: Number, default: 4, min: 2, max: 20 },
+    floodWindowMs: { type: Number, default: 2000, min: 500, max: 30000 },
+    duplicateThreshold: { type: Number, default: 4, min: 2, max: 20 },
+    raidJoinThreshold: { type: Number, default: 10, min: 3, max: 100 },
+    raidWindowMs: { type: Number, default: 10000, min: 1000, max: 120000 },
+    raidAction: { type: String, enum: ['warn', 'timeout', 'ban'], default: 'timeout' },
+    raidLockdownEnabled: { type: Boolean, default: true },
+    raidLockdownMinutes: { type: Number, default: 10, min: 1, max: 1440 },
+    nukeProtection: { type: Boolean, default: false },
+    nukeThreshold: { type: Number, default: 3, min: 2, max: 20 },
+    nukeWindowMs: { type: Number, default: 10000, min: 1000, max: 120000 },
+    nukeAction: { type: String, enum: ['warn', 'timeout', 'ban'], default: 'timeout' },
+  },
+  leveling: {
+    xpMin: { type: Number, default: 15, min: 1, max: 100 },
+    xpMax: { type: Number, default: 25, min: 1, max: 200 },
+    cooldownSeconds: { type: Number, default: 60, min: 5, max: 3600 },
+    excludedChannels: { type: [String], default: [] },
+    announceChannelId: { type: String, default: null },
+    roleRewards: {
+      type: [{
+        level: { type: Number, required: true, min: 1, max: 10000 },
+        roleId: { type: String, required: true },
+      }],
+      default: [],
+      validate: (rewards) => rewards.length <= 50,
+    },
+  },
+  economy: {
+    dailyReward: { type: Number, default: 100, min: 1, max: 1000000 },
+    weeklyReward: { type: Number, default: 500, min: 1, max: 10000000 },
+    workMin: { type: Number, default: 25, min: 1, max: 1000000 },
+    workMax: { type: Number, default: 100, min: 1, max: 1000000 },
+    workCooldownHours: { type: Number, default: 1, min: 1, max: 168 },
+    items: {
+      type: [{
+        itemId: { type: String, required: true, lowercase: true, match: /^[a-z0-9_-]{1,32}$/ },
+        name: { type: String, required: true, maxlength: 80 },
+        description: { type: String, default: '', maxlength: 200 },
+        price: { type: Number, required: true, min: 1, max: 100000000 },
+      }],
+      default: [],
+      validate: (items) => items.length <= 25,
+    },
+  },
+  ai: {
+    mentionResponses: { type: Boolean, default: false },
+    greetingAutoReply: { type: Boolean, default: false },
+    greetingTriggers: { type: [String], default: ['hi', 'hello', 'hey', 'good morning', 'good evening'] },
+  },
+  music: {
+    defaultVolume: { type: Number, default: 50, min: 0, max: 100 },
+    maxQueueSize: { type: Number, default: 100, min: 1, max: 1000 },
+  },
+  welcomeLeave: {
+    welcomeEnabled: { type: Boolean, default: false },
+    leaveEnabled: { type: Boolean, default: false },
+    welcomeChannelId: { type: String, default: null },
+    leaveChannelId: { type: String, default: null },
+    backgroundImageUrl: { type: String, default: null, maxlength: 2048 },
+    welcome: {
+      title: { type: String, default: 'Welcome to {server}!', maxlength: 256 },
+      description: { type: String, default: 'Welcome {user}! You are member #{memberCount}.', maxlength: 4000 },
+      color: { type: String, default: '#7478ff', match: /^#[0-9a-fA-F]{6}$/ },
+      footer: { type: String, default: 'InfinitX Club • {date} {time}', maxlength: 2048 },
+      includeDate: { type: Boolean, default: true },
+      includeTime: { type: Boolean, default: true },
+      thumbnailUrl: { type: String, default: null, maxlength: 2048 },
+      imageUrl: { type: String, default: null, maxlength: 2048 },
+    },
+    leave: {
+      title: { type: String, default: 'Goodbye from {server}', maxlength: 256 },
+      description: { type: String, default: '{username} has left the server.', maxlength: 4000 },
+      color: { type: String, default: '#7478ff', match: /^#[0-9a-fA-F]{6}$/ },
+      footer: { type: String, default: 'InfinitX Club • {date} {time}', maxlength: 2048 },
+      includeDate: { type: Boolean, default: true },
+      includeTime: { type: Boolean, default: true },
+      thumbnailUrl: { type: String, default: null, maxlength: 2048 },
+      imageUrl: { type: String, default: null, maxlength: 2048 },
+    },
+  },
+  verification: {
+    enabled: { type: Boolean, default: false },
+    roleId: { type: String, default: null },
+    channelId: { type: String, default: null },
+    panel: {
+      title: { type: String, default: 'Verify to access the server', maxlength: 256 },
+      description: { type: String, default: 'Press the button below and complete the verification challenge.', maxlength: 4000 },
+      color: { type: String, default: '#5865f2', match: /^#[0-9a-fA-F]{6}$/ },
+      footer: { type: String, default: '', maxlength: 2048 },
+      imageUrl: { type: String, default: null, maxlength: 2048 },
+      buttonLabel: { type: String, default: 'Verify', maxlength: 80 },
+      buttonStyle: { type: String, enum: ['primary', 'secondary', 'success'], default: 'success' },
+    },
+  },
+  temporaryVoice: {
+    joinChannelId: { type: String, default: null },
+    categoryId: { type: String, default: null },
+  },
+  starboard: {
+    channelId: { type: String, default: null },
+    threshold: { type: Number, default: 3, min: 1, max: 100 },
+    emoji: { type: String, default: '⭐', maxlength: 64 },
+  },
+  suggestions: {
+    channelId: { type: String, default: null },
+    logChannelId: { type: String, default: null },
+  },
+  tickets: {
+    categoryId: { type: String, default: null },
+    supportRoleId: { type: String, default: null },
+    logChannelId: { type: String, default: null },
+    autoCloseHours: { type: Number, default: 72, min: 1, max: 8760 },
+    panel: {
+      title: { type: String, default: 'Need help?', maxlength: 256 },
+      description: { type: String, default: 'Press the button below to open a private support ticket.', maxlength: 4000 },
+      color: { type: String, default: '#5865f2', match: /^#[0-9a-fA-F]{6}$/ },
+      footer: { type: String, default: '', maxlength: 2048 },
+      imageUrl: { type: String, default: null, maxlength: 2048 },
+      buttonLabel: { type: String, default: 'Open a ticket', maxlength: 80 },
+      buttonStyle: { type: String, enum: ['primary', 'secondary', 'success'], default: 'primary' },
+    },
+    categories: {
+      type: [{
+        key: { type: String, required: true, lowercase: true, match: /^[a-z0-9_-]{1,25}$/ },
+        label: { type: String, required: true, maxlength: 100 },
+        description: { type: String, default: '', maxlength: 100 },
+        categoryId: { type: String, default: null },
+        supportRoleId: { type: String, default: null },
+      }],
+      default: [],
+      validate: (categories) => categories.length <= 25,
+    },
+  },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+}, { minimize: false, versionKey: false });
+
+guildConfigSchema.pre('save', function updateTimestamp() {
+  this.updatedAt = new Date();
+});
+
+module.exports = mongoose.models.GuildConfig || mongoose.model('GuildConfig', guildConfigSchema);

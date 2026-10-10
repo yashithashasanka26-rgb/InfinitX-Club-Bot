@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>InfinitX Club Dashboard</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+</head>
+<body>
+  <main class="container">
+    <header class="topbar">
+      <a class="brand" href="/">InfinitX Club</a>
+      <% if (user) { %>
+        <div class="user">
+          <% if (user.avatar) { %><img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png?size=64" alt=""><% } %>
+          <span><%= user.username %></span>
+          <form action="/auth/logout" method="post"><button class="secondary" type="submit">Log out</button></form>
+        </div>
+      <% } %>
+    </header>
+    <section class="hero">
+      <p class="eyebrow">MASTER DASHBOARD</p>
+      <h1>Configure your Discord server</h1>
+      <p>Manage InfinitX Club modules and server settings from one place.</p>
+      <% if (error) { %><p class="notice error"><%= error %></p><% } %>
+      <% if (!user) { %>
+        <a class="button" href="/auth/discord">Continue with Discord</a>
+      <% } else { %>
+        <h2>Your manageable servers</h2>
+        <% if (!servers.length) { %><p>No servers with Administrator or Manage Server permissions were found.</p><% } %>
+        <div class="server-grid">
+          <% servers.forEach((server) => { %>
+            <a class="server-card" href="/servers/<%= server.id %>">
+              <% if (server.icon) { %>
+                <img src="https://cdn.discordapp.com/icons/<%= server.id %>/<%= server.icon %>.png?size=96" alt="">
+              <% } else { %><span class="server-placeholder"><%= server.name.slice(0, 1) %></span><% } %>
+              <span><%= server.name %></span><span aria-hidden="true">→</span>
+            </a>
+          <% }); %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

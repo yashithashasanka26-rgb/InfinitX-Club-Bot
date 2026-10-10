@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title><%= section.label %> · <%= guild.name %> · InfinitX Club</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+  <script src="/assets/settings.js" defer></script>
+</head>
+<body class="dashboard-body" data-guild-id="<%= guildId %>" data-section="<%= section.id %>">
+  <header class="topbar dashboard-topbar">
+    <a class="brand" href="/">InfinitX Club <span class="brand-mark">CONTROL CENTER</span></a>
+    <div class="user">
+      <% if (user.avatar) { %><img src="https://cdn.discordapp.com/avatars/<%= user.id %>/<%= user.avatar %>.png?size=64" alt=""><% } %>
+      <span><%= user.username %></span>
+      <a class="button secondary" href="/">Servers</a>
+      <form action="/auth/logout" method="post"><button class="secondary" type="submit">Log out</button></form>
+    </div>
+  </header>
+  <div class="workspace">
+    <aside class="sidebar">
+      <a class="server-summary" href="/servers/<%= guildId %>/settings/general">
+        <% if (guild.icon) { %><img src="https://cdn.discordapp.com/icons/<%= guild.id %>/<%= guild.icon %>.png?size=96" alt=""><% } else { %><span class="server-placeholder"><%= guild.name.slice(0, 1) %></span><% } %>
+        <span><strong><%= guild.name %></strong><small>Server settings</small></span>
+      </a>
+      <nav aria-label="Server settings">
+        <% sections.forEach((item) => { %>
+          <a class="nav-item <%= item.id === section.id ? 'active' : '' %>" href="/servers/<%= guildId %>/settings/<%= item.id %>">
+            <span class="nav-icon" aria-hidden="true"><%= item.icon %></span><span><%= item.label %></span>
+            <% if (item.module) { %><span class="nav-state <%= config.modules[item.module] ? 'on' : '' %>" aria-label="<%= config.modules[item.module] ? 'Enabled' : 'Disabled' %>"></span><% } %>
+          </a>
+        <% }); %>
+      </nav>
+      <p class="sidebar-foot">InfinitX Club · Dashboard</p>
+    </aside>
+    <main class="content">
+      <div class="breadcrumbs"><a href="/">Servers</a><span>/</span><span><%= guild.name %></span><span>/</span><span><%= section.label %></span></div>
+      <div class="page-heading">
+        <div><p class="eyebrow">SERVER MANAGEMENT</p><h1><%= section.label %></h1><p><%= section.description %></p></div>
+        <% if (section.module) { %><span class="module-badge <%= config.modules[section.module] ? 'enabled' : '' %>"><%= config.modules[section.module] ? '● Enabled' : '○ Disabled' %></span><% } %>
+      </div>
+      <div id="notice" class="notice" role="status" aria-live="polite"></div>
+
+      <% if (section.id === 'general') { %>
+        <form id="settings-form" class="settings-form">
+          <section class="card">
+            <div class="card-heading"><div><h2>Server preferences</h2><p>Set defaults used across your dashboard and bot.</p></div></div>
+            <div class="form-grid">
+              <label class="field"><span>Command prefix</span><input name="prefix" maxlength="5" required value="<%= config.prefix %>"><small>1–5 characters, no spaces.</small></label>
+              <label class="field"><span>Dashboard language</span><select name="language"><% ['en','en-US'].forEach((locale) => { %><option value="<%= locale %>" <%= config.language === locale ? 'selected' : '' %>><%= locale %></option><% }); %></select></label>
+            </div>
+          </section>
+          <section class="card">
+            <div class="card-heading"><div><h2>Modules</h2><p>Turn features on or off for this server.</p></div></div>
+            <div class="module-cards">
+              <% Object.entries(config.modules).forEach(([name, enabled]) => { %>
+                <label class="module-card"><span><strong><%= name.replace(/([A-Z])/g, ' $1') %></strong><small>Enable this module in your server</small></span><input type="checkbox" name="module" value="<%= name %>" <%= enabled ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+              <% }); %>
+            </div>
+          </section>
+          <button class="save-button" type="submit">Save overview settings</button>
+        </form>
+      <% } else if (section.id === 'welcome') { %>
+        <% const settings = config.welcomeLeave; %>
+        <form id="settings-form" class="settings-form">
+          <section class="card">
+            <div class="card-heading"><div><h2>Message destinations</h2><p>Choose which events to announce and where they should appear.</p></div></div>
+            <div class="form-grid">
+              <label class="module-card span-2"><span><strong>Enable Welcome & Leave module</strong><small>Master switch for these messages.</small></span><input data-module-toggle value="welcomeLeave" type="checkbox" <%= config.modules.welcomeLeave ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+              <label class="module-card"><span><strong>Welcome messages</strong><small>Send a card when a member joins</small></span><input data-welcome-enabled type="checkbox" <%= settings.welcomeEnabled ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+              <label class="module-card"><span><strong>Leave messages</strong><small>Send a message when a member leaves</small></span><input data-leave-enabled type="checkbox" <%= settings.leaveEnabled ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+              <label class="field"><span>Welcome channel ID</span><input data-welcome-channel value="<%= settings.welcomeChannelId || '' %>" inputmode="numeric" placeholder="Discord channel ID"></label>
+              <label class="field"><span>Leave channel ID</span><input data-leave-channel value="<%= settings.leaveChannelId || '' %>" inputmode="numeric" placeholder="Discord channel ID"></label>
+              <label class="field span-2"><span>Background banner image URL</span><input data-background-image type="url" value="<%= settings.backgroundImageUrl || '' %>" placeholder="https://example.com/banner.png"><small>Optional HTTPS image displayed on the welcome card.</small></label>
+            </div>
+          </section>
+          <div class="welcome-layout">
+            <% [['welcome','Welcome card'],['leave','Leave card']].forEach(([type,title]) => { const embed = settings[type]; %>
+              <section class="card embed-card" data-embed-card="<%= type %>">
+                <div class="card-heading"><div><h2><%= title %></h2><p>Personalize the message. Use the placeholders shown below.</p></div></div>
+                <div class="form-grid">
+                  <label class="field span-2"><span>Title</span><input data-embed-field="<%= type %>.title" maxlength="256" value="<%= embed.title %>"></label>
+                  <label class="field span-2"><span>Description</span><textarea data-embed-field="<%= type %>.description" rows="4" maxlength="4000"><%= embed.description %></textarea></label>
+                  <label class="field"><span>Embed color</span><input class="color-input" data-embed-field="<%= type %>.color" type="color" value="<%= embed.color %>"></label>
+                  <label class="field"><span>Footer</span><input data-embed-field="<%= type %>.footer" maxlength="2048" value="<%= embed.footer %>"></label>
+                  <label class="module-card"><span><strong>Include date</strong><small>Render the <code>{date}</code> placeholder.</small></span><input data-embed-field="<%= type %>.includeDate" type="checkbox" <%= embed.includeDate !== false ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+                  <label class="module-card"><span><strong>Include time</strong><small>Render the <code>{time}</code> placeholder.</small></span><input data-embed-field="<%= type %>.includeTime" type="checkbox" <%= embed.includeTime !== false ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+                  <label class="field span-2"><span>Thumbnail image URL</span><input data-embed-field="<%= type %>.thumbnailUrl" type="url" value="<%= embed.thumbnailUrl || '' %>" placeholder="https://example.com/avatar.png"></label>
+                  <label class="field span-2"><span>Embed image or GIF URL</span><input data-embed-field="<%= type %>.imageUrl" type="url" value="<%= embed.imageUrl || '' %>" placeholder="https://example.com/welcome.gif"></label>
+                </div>
+                <div class="embed-preview" data-preview="<%= type %>">
+                  <div class="preview-copy"><strong data-preview-title><%= embed.title %></strong><p data-preview-description><%= embed.description %></p><small data-preview-footer><%= embed.footer %></small></div>
+                  <% if (embed.thumbnailUrl) { %><img data-preview-thumbnail src="<%= embed.thumbnailUrl %>" alt=""><% } else { %><img data-preview-thumbnail alt="" hidden><% } %>
+                </div>
+                <% if (embed.imageUrl) { %><img class="banner-preview" data-preview-image src="<%= embed.imageUrl %>" alt="Embed image preview"><% } else { %><img class="banner-preview" data-preview-image alt="Embed image preview" hidden><% } %>
+                <% if (type === 'welcome') { %>
+                  <% if (settings.backgroundImageUrl) { %><img class="banner-preview" data-banner-preview src="<%= settings.backgroundImageUrl %>" alt="Welcome banner preview"><% } else { %><img class="banner-preview" data-banner-preview alt="Welcome banner preview" hidden><% } %>
+                <% } %>
+              </section>
+            <% }); %>
+          </div>
+          <section class="hint-card"><strong>Personalization placeholders</strong><span><code>{user}</code> mention · <code>{username}</code> display name · <code>{server}</code> server name · <code>{memberCount}</code> member count · <code>{date}</code> UTC date · <code>{time}</code> UTC time. The footer automatically uses the bot avatar as its icon.</span></section>
+          <button class="save-button" type="submit">Save welcome & leave settings</button>
+        </form>
+      <% } else if (section.id === 'ticketPanel' || section.id === 'verificationPanel') { %>
+        <% const isTicket = section.id === 'ticketPanel'; const sectionKey = isTicket ? 'tickets' : 'verification'; const panel = config[sectionKey].panel; %>
+        <form id="settings-form" class="settings-form">
+          <section class="card">
+            <div class="card-heading"><div><h2>Panel message</h2><p>Customize the embed and interactive button shown in Discord.</p></div></div>
+            <% if (!isTicket) { %>
+              <div class="form-grid">
+                <label class="field"><span>Verified role ID</span><input data-verification-role value="<%= config.verification.roleId || '' %>" inputmode="numeric" placeholder="Discord role ID"></label>
+                <label class="module-card"><span><strong>Enable verification</strong><small>Grant the configured verified role after the challenge.</small></span><input data-verification-enabled type="checkbox" <%= config.verification.enabled ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+              </div>
+            <% } %>
+            <div class="form-grid">
+              <label class="field"><span>Deploy to channel ID</span><input data-deploy-channel inputmode="numeric" placeholder="Discord text channel ID" required></label>
+              <label class="field"><span>Panel title</span><input data-panel-field="title" maxlength="256" value="<%= panel.title %>"></label>
+              <label class="field span-2"><span>Panel description</span><textarea data-panel-field="description" rows="4" maxlength="4000"><%= panel.description %></textarea></label>
+              <label class="field"><span>Embed color</span><input data-panel-field="color" class="color-input" type="color" value="<%= panel.color %>"></label>
+              <label class="field"><span>Footer</span><input data-panel-field="footer" maxlength="2048" value="<%= panel.footer %>"></label>
+              <label class="field span-2"><span>Image or GIF URL</span><input data-panel-field="imageUrl" type="url" value="<%= panel.imageUrl || '' %>" placeholder="https://example.com/panel.gif"></label>
+              <label class="field"><span>Button label</span><input data-panel-field="buttonLabel" maxlength="80" value="<%= panel.buttonLabel %>"></label>
+              <label class="field"><span>Button style</span><select data-panel-field="buttonStyle"><% ['primary','secondary','success'].forEach((style) => { %><option value="<%= style %>" <%= panel.buttonStyle === style ? 'selected' : '' %>><%= style %></option><% }); %></select></label>
+            </div>
+          </section>
+          <button class="save-button" type="submit"><%= isTicket ? 'Save & deploy ticket panel' : 'Save & deploy verification panel' %></button>
+        </form>
+      <% } else if (section.id === 'music') { %>
+        <form id="settings-form" class="settings-form">
+          <section class="card module-enable-card"><label class="module-card"><span><strong>Enable Music module</strong><small>Allow music commands in this server.</small></span><input data-module-toggle value="music" type="checkbox" <%= config.modules.music ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label></section>
+          <section class="card"><div class="card-heading"><div><h2>Playback defaults</h2><p>Settings are applied to new music sessions.</p></div></div><div class="form-grid">
+            <% fields.forEach((field) => { %><label class="field"><span><%= field.label %></span><input data-setting-key="<%= field.key %>" data-setting-type="number" type="number" min="<%= field.min %>" max="<%= field.max %>" value="<%= config.music[field.key] %>"></label><% }); %>
+          </div></section>
+          <button class="save-button" type="submit">Save music settings</button>
+        </form>
+        <section class="card music-dashboard" data-music-panel>
+          <div class="card-heading"><div><h2>Live player</h2><p>Dashboard controls are executed by the connected bot process. Join a voice channel before starting a track.</p></div><button type="button" class="secondary" data-music-action="status">Refresh status</button></div>
+          <div class="music-now-playing"><span class="music-indicator" data-music-status>Loading status…</span><strong data-music-title>No track playing</strong><span data-music-channel></span></div>
+          <div class="music-controls"><label class="field music-query"><span>Play a track or search</span><input data-music-query maxlength="200" placeholder="Track URL or search terms"></label><button type="button" data-music-action="play">Play</button><button type="button" class="secondary" data-music-action="pause">Pause</button><button type="button" class="secondary" data-music-action="resume">Resume</button><button type="button" class="secondary" data-music-action="skip">Skip</button><button type="button" class="secondary" data-music-action="stop">Stop</button><label class="field volume-field"><span>Volume (%)</span><input data-music-volume type="number" min="0" max="200" value="50"></label><button type="button" class="secondary" data-music-action="volume">Set volume</button></div>
+          <h3 class="queue-heading">Up next</h3><ol class="music-queue" data-music-queue><li>Queue is empty.</li></ol>
+          <div class="notice" data-music-notice role="status" aria-live="polite"></div>
+        </section>
+      <% } else if (section.id === 'scheduled') { %>
+        <form id="settings-form" class="settings-form">
+          <section class="card"><div class="card-heading"><div><h2>Custom embed</h2><p>Send a rich embed now or schedule it for later.</p></div></div>
+            <div class="form-grid">
+              <label class="field"><span>Target channel ID</span><input data-scheduled-channel inputmode="numeric" placeholder="Discord text channel ID" required></label>
+              <label class="field"><span>Embed title</span><input data-scheduled-field="title" maxlength="256"></label>
+              <label class="field span-2"><span>Description</span><textarea data-scheduled-field="description" rows="4" maxlength="4000"></textarea></label>
+              <label class="field"><span>Embed color</span><input data-scheduled-field="color" type="color" value="#7478ff"></label>
+              <label class="field"><span>Footer</span><input data-scheduled-field="footer" maxlength="2048"></label>
+              <label class="field span-2"><span>Image or GIF URL</span><input data-scheduled-field="imageUrl" type="url" placeholder="https://example.com/announcement.gif"></label>
+              <label class="field"><span>Schedule time (your local timezone)</span><input data-scheduled-at type="datetime-local"></label>
+            </div>
+            <div class="action-row"><button type="button" data-scheduled-action="send">Send now</button><button class="secondary" type="button" data-scheduled-action="schedule">Schedule message</button></div>
+          </section>
+        </form>
+        <section class="card"><div class="card-heading"><div><h2>Scheduled messages</h2><p>Pending schedules and recent delivery status.</p></div><button type="button" class="secondary" data-scheduled-refresh>Refresh</button></div><div class="schedule-list" data-schedule-list><p>Loading scheduled messages…</p></div><div class="notice" data-scheduled-notice role="status" aria-live="polite"></div></section>
+      <% } else if (section.id === 'commands') { %>
+        <form id="settings-form" class="settings-form">
+          <section class="card"><div class="card-heading"><div><h2>Command policies</h2><p>Apply per-server access rules. Role and channel values are Discord IDs.</p></div><input class="search-input" type="search" data-command-search placeholder="Search commands"></div>
+            <div class="command-list">
+              <% commands.forEach((command) => { const policy = permissions.find((item) => item.commandName === command.name) || {}; %>
+                <article class="command-card" data-command-card data-command-name="<%= command.name %>" data-search="<%= `${command.name} ${command.description} ${command.module}`.toLowerCase() %>">
+                  <div class="command-title"><div><h3>/<%= command.name %></h3><p><%= command.description %></p></div><span class="tag"><%= command.module %></span></div>
+                  <label class="inline-toggle"><input data-command-field="enabled" type="checkbox" <%= policy.enabled !== false ? 'checked' : '' %>><span>Command enabled</span></label>
+                  <div class="form-grid compact">
+                    <label class="field"><span>Cooldown (seconds)</span><input data-command-field="cooldownSeconds" type="number" min="0" max="86400" value="<%= policy.cooldownSeconds || 0 %>"></label>
+                    <label class="field"><span>Maximum uses per window</span><input data-command-field="maxUses" type="number" min="1" max="1000000" value="<%= policy.maxUses ?? '' %>" placeholder="Unlimited"></label>
+                    <label class="field"><span>Window (seconds)</span><input data-command-field="windowSeconds" type="number" min="1" max="2592000" value="<%= policy.windowSeconds || 86400 %>"></label>
+                    <label class="field"><span>Required role IDs</span><input data-command-field="requiredRoleIds" value="<%= (policy.requiredRoleIds || []).join(', ') %>" placeholder="Role IDs, comma separated"></label>
+                    <label class="field"><span>Allowed channel IDs</span><input data-command-field="allowedChannelIds" value="<%= (policy.allowedChannelIds || []).join(', ') %>" placeholder="Leave empty for any channel"></label>
+                    <label class="field"><span>Denied channel IDs</span><input data-command-field="deniedChannelIds" value="<%= (policy.deniedChannelIds || []).join(', ') %>" placeholder="Channel IDs, comma separated"></label>
+                  </div>
+                </article>
+              <% }); %>
+            </div>
+          </section>
+          <button class="save-button" type="submit">Save command policies</button>
+        </form>
+      <% } else { %>
+        <form id="settings-form" class="settings-form">
+          <% if (section.module) { %><section class="card module-enable-card"><label class="module-card"><span><strong>Enable <%= section.label %></strong><small>Turn this feature on or off for this server.</small></span><input data-module-toggle value="<%= section.module %>" type="checkbox" <%= config.modules[section.module] ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label></section><% } %>
+          <% if (section.id === 'moderation') { %><section class="card module-enable-card"><label class="module-card"><span><strong>Enable AutoMod & Anti-Raid</strong><small>Apply message filters, join-spike detection, and configured automatic actions.</small></span><input data-module-toggle value="automod" type="checkbox" <%= config.modules.automod ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label></section><% } %>
+          <section class="card">
+            <div class="card-heading"><div><h2><%= section.label %> settings</h2><p>Changes are validated and saved to this server’s configuration.</p></div></div>
+            <% if (fields.length) { %><div class="form-grid">
+              <% fields.forEach((field) => { const value = config[section.id][field.key]; %>
+                <% if (field.type === 'checkbox') { %>
+                  <label class="module-card span-2"><span><strong><%= field.label %></strong></span><input data-setting-key="<%= field.key %>" data-setting-type="checkbox" type="checkbox" <%= value ? 'checked' : '' %>><span class="switch" aria-hidden="true"></span></label>
+                <% } else if (field.type === 'select') { %>
+                  <label class="field"><span><%= field.label %></span><select data-setting-key="<%= field.key %>" data-setting-type="string"><% field.options.forEach((option) => { %><option value="<%= option %>" <%= value === option ? 'selected' : '' %>><%= option %></option><% }); %></select></label>
+                <% } else if (field.type === 'lines') { %>
+                  <label class="field span-2"><span><%= field.label %></span><textarea data-setting-key="<%= field.key %>" data-setting-type="lines" rows="4"><%= Array.isArray(value) ? value.join('\n') : '' %></textarea><% if (field.help) { %><small><%= field.help %></small><% } %></label>
+                <% } else if (field.type === 'records') { %>
+                  <label class="field span-2"><span><%= field.label %></span><textarea data-setting-key="<%= field.key %>" data-setting-type="records" data-record-type="<%= field.recordType %>" rows="5"><%= renderRecords(value, field.recordType) %></textarea><% if (field.help) { %><small><%= field.help %></small><% } %></label>
+                <% } else { %>
+                  <label class="field"><span><%= field.label %></span><input data-setting-key="<%= field.key %>" data-setting-type="<%= field.type %>" type="<%= field.type === 'id' ? 'text' : field.type %>" value="<%= value ?? '' %>" <% if (field.min !== undefined) { %>min="<%= field.min %>"<% } %> <% if (field.max !== undefined) { %>max="<%= field.max %>"<% } %> <% if (field.maxLength) { %>maxlength="<%= field.maxLength %>"<% } %> <% if (field.type === 'id') { %>inputmode="numeric" placeholder="Discord ID"<% } %>></label>
+                <% } %>
+              <% }); %>
+            </div><% } else { %><p class="empty-state">This module is controlled by its enable toggle. Use its bot commands to manage individual records.</p><% } %>
+          </section>
+          <button class="save-button" type="submit">Save <%= section.label %> settings</button>
+        </form>
+      <% } %>
+      <footer class="content-footer">Only server owners and members with Administrator or Manage Server permission can manage these settings.</footer>
+    </main>
+  </div>
+  <script id="page-data" type="application/json"><%- JSON.stringify({ section: section.id, guildId, modules: config.modules, welcomeLeave: config.welcomeLeave, permissions }).replace(/</g, '\\u003c') %></script>
+</body>
+</html>
+
+<%
+function renderRecords(value, type) {
+  if (!Array.isArray(value)) return '';
+  if (type === 'roleReward') return value.map((item) => `${item.level}|${item.roleId}`).join('\n');
+  if (type === 'shop') return value.map((item) => `${item.itemId}|${item.name}|${item.description || ''}|${item.price}`).join('\n');
+  if (type === 'ticketCategory') return value.map((item) => `${item.key}|${item.label}|${item.description || ''}|${item.categoryId || ''}|${item.supportRoleId || ''}`).join('\n');
+  return '';
+}
+%>

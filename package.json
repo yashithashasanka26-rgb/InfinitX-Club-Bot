@@ -1,0 +1,33 @@
+{
+  "name": "infinitx-club",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Modular Discord bot and guild configuration API for InfinitX Club",
+  "main": "src/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "start:dashboard": "node src/dashboard/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy:commands": "node src/deploy-commands.js",
+    "check": "node --check src/index.js && node --check src/dashboard/index.js && node --test"
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "connect-mongo": "^5.1.0",
+    "discord.js": "^14.22.1",
+    "dotenv": "^16.6.1",
+    "ejs": "^7.0.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "ffmpeg-static": "^5.3.0",
+    "helmet": "^8.1.0",
+    "mongodb": "^7.7.0",
+    "mongoose": "^8.18.0",
+    "opusscript": "^0.0.8",
+    "play-dl": "^1.9.7"
+  }
+}

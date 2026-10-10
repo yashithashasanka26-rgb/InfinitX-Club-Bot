@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page not found · InfinitX Club</title>
+  <link rel="stylesheet" href="/assets/dashboard.css">
+</head>
+<body>
+  <main class="container">
+    <header class="topbar"><a class="brand" href="/">InfinitX Club</a><a class="button secondary" href="/">Servers</a></header>
+    <section class="hero">
+      <p class="eyebrow">SERVER SETTINGS</p>
+      <h1>Settings page not found</h1>
+      <p>That dashboard section does not exist. Choose a valid section below.</p>
+      <div class="server-grid">
+        <% sections.forEach((section) => { %><a class="server-card" href="/servers/<%= guildId %>/settings/<%= section.id %>"><span><%= section.label %></span><span aria-hidden="true">→</span></a><% }); %>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
